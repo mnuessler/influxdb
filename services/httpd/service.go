@@ -71,34 +71,42 @@ func (s *Service) Open() error {
 	s.Logger.Println("Starting HTTP service")
 	s.Logger.Println("Authentication enabled:", s.Handler.requireAuthentication)
 
-	// Open listener.
+	// Open listeners.
+	var listeners []net.Listener
 	if s.https {
+		// Open HTTPS listener if enabled.
 		cert, err := tls.LoadX509KeyPair(s.cert, s.cert)
 		if err != nil {
 			return err
 		}
 
-		listener, err := tls.Listen("tcp", s.addr, &tls.Config{
+		// TODO: Listener address hardcoded for now, but
+		// should be configurable
+		httpsListenAddress := ":8087"
+
+		httpsListener, err := tls.Listen("tcp", httpsListenAddress, &tls.Config{
 			Certificates: []tls.Certificate{cert},
 		})
 		if err != nil {
 			return err
 		}
 
-		s.Logger.Println("Listening on HTTPS:", listener.Addr().String())
-		s.ln = listener
-	} else {
-		listener, err := net.Listen("tcp", s.addr)
-		if err != nil {
-			return err
-		}
-
-		s.Logger.Println("Listening on HTTP:", listener.Addr().String())
-		s.ln = listener
+		s.Logger.Println("Listening on HTTPS:", httpsListener.Addr().String())
+		listeners = append(listeners, httpsListener)
+	}
+	// Always open HTTP listener.
+	httpListener, err := net.Listen("tcp", s.addr)
+	if err != nil {
+		return err
 	}
 
+	listeners = append(listeners, httpListener)
+	s.Logger.Println("Listening on HTTP:", httpListener.Addr().String())
+
 	// Begin listening for requests in a separate goroutine.
-	go s.serve()
+	for _, listener := range listeners {
+		go s.serve(listener)
+	}
 	return nil
 }
 
@@ -127,11 +135,11 @@ func (s *Service) Addr() net.Addr {
 }
 
 // serve serves the handler from the listener.
-func (s *Service) serve() {
+func (s *Service) serve(listener net.Listener) {
 	// The listener was closed so exit
 	// See https://github.com/golang/go/issues/4373
-	err := http.Serve(s.ln, s.Handler)
+	err := http.Serve(listener, s.Handler)
 	if err != nil && !strings.Contains(err.Error(), "closed") {
-		s.err <- fmt.Errorf("listener failed: addr=%s, err=%s", s.Addr(), err)
+		s.err <- fmt.Errorf("listener failed: addr=%s, err=%s", listener.Addr(), err)
 	}
 }
