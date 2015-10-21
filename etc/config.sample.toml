@@ -140,7 +140,7 @@ reporting-disabled = false
 ### mechanism for getting data into and out of InfluxDB.
 ###
 
-[http]
+[[http]]
   enabled = true
   bind-address = ":8086"
   auth-enabled = false

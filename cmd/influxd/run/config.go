@@ -41,7 +41,7 @@ type Config struct {
 	Admin      admin.Config      `toml:"admin"`
 	Monitor    monitor.Config    `toml:"monitor"`
 	Subscriber subscriber.Config `toml:"subscriber"`
-	HTTPD      httpd.Config      `toml:"http"`
+	HTTPDs     []httpd.Config    `toml:"http"`
 	Graphites  []graphite.Config `toml:"graphite"`
 	Collectd   collectd.Config   `toml:"collectd"`
 	OpenTSDB   opentsdb.Config   `toml:"opentsdb"`
@@ -68,7 +68,6 @@ func NewConfig() *Config {
 	c.Admin = admin.NewConfig()
 	c.Monitor = monitor.NewConfig()
 	c.Subscriber = subscriber.NewConfig()
-	c.HTTPD = httpd.NewConfig()
 	c.Collectd = collectd.NewConfig()
 	c.OpenTSDB = opentsdb.NewConfig()
 

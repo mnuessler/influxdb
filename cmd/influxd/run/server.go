@@ -162,7 +162,9 @@ func NewServer(c *Config, buildInfo *BuildInfo) (*Server, error) {
 	s.appendCopierService()
 	s.appendAdminService(c.Admin)
 	s.appendContinuousQueryService(c.ContinuousQuery)
-	s.appendHTTPDService(c.HTTPD)
+	for _, g := range c.HTTPDs {
+		s.appendHTTPDService(g)
+	}
 	s.appendCollectdService(c.Collectd)
 	if err := s.appendOpenTSDBService(c.OpenTSDB); err != nil {
 		return nil, err
